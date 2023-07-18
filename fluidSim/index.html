@@ -1,0 +1,59 @@
+<!doctype HTML>
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            body {
+                background: #333333;
+                color: white;
+                font-family: Helvetica;
+            }
+        </style>
+        <title>Oliver's simple fluid dynamics simulator</title>
+        <script src="pressure.js"></script>
+        <script src="pressure-display.js"></script>
+        <script src="index.js"></script>
+    </head>
+    <body>
+        <table style="width: 100%;">
+            <tr>
+                <td style="text-align: center"><h1>Oliver's simple fluid dynamics simulator</h1>
+                </td>
+            </tr>
+        </table>
+        <table style="width: 100%;">
+            <tr>
+                <td>
+                    <canvas id=canvas style="width: 512px; height: 512px;" width=512 height=512></canvas>
+                </td>
+                <td>
+                    Simple fluid dynamics simulator based on the navier-stokes equations, implemented in JavaScript.
+                    <ul>
+                        <li>Click and drag to add density and velocity</li>
+                        <li>Add density source with alt-click or anything other than the left-button</li>
+                    </ul>
+                    <div id = log></div>
+                    <button id="start_btn">start</button>
+                    <button id="stop_btn">stop</button>
+                    <button id="reset_btn">reset</button><br />
+                    <button id="toggle_btn">Toggle drawing mode</button><br />
+                    Solver Iterations:
+                    <input id="iterations" type="range" min=1 max=75><br />
+                    Resolution:
+                    <select id="resolution">
+                        <option>64</option>
+                        <option>8</option>
+                        <option>16</option>
+                        <option>24</option>
+                        <option>32</option>
+                        <option>48</option>
+                        <option>96</option>
+                        <option>128</option>
+                        <option>256</option>
+                        <option>512</option>
+                    </select>
+                </td>
+            </tr>
+        </table>
+    </body>
+</html>
