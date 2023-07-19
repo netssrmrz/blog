@@ -5,6 +5,7 @@ class Fluid_Canvas extends HTMLElement
   static tname = "fluid-canvas";
 
   canvas;
+  objs_canvas;
   field = null;
   fieldRes;
   showVectors = false;
@@ -25,7 +26,7 @@ class Fluid_Canvas extends HTMLElement
   start = new Date;
   frames = 0;
   clampData = false;
-  obj_pos = {x: 60, y: 60};
+  objs = new Array(100);
 
   // Lifecycle ====================================================================================
 
@@ -40,8 +41,22 @@ class Fluid_Canvas extends HTMLElement
   {
     this.innerHTML = `
       <canvas id="canvas"></canvas>
-      <canvas id="canvas_obj" width="1000" height="1000"></canvas>
+      <canvas id="objs_canvas" width="1000" height="1000"></canvas>
     `;
+
+    this.objs_canvas = this.querySelector("#objs_canvas");
+    const w = this.To_Float(getComputedStyle(this.objs_canvas).width);
+    const h = this.To_Float(getComputedStyle(this.objs_canvas).height);
+    for (let i = 0; i < this.objs.length; i++)
+    {
+      const obj = 
+      {
+        x: Math.random() * w,
+        y: Math.random() * h
+      };
+      this.objs[i] = obj;
+    }
+
     this.On_Load();
   }
 
@@ -137,21 +152,33 @@ class Fluid_Canvas extends HTMLElement
     return res;
   }
 
-  Render_Obj(field)
+  To_Float(px_str)
   {
-    const canvas_obj = this.querySelector("#canvas_obj");
-    const ctx = canvas_obj.getContext("2d");
-    ctx.fillStyle = "#f00";
+    return Number.parseFloat(px_str.substring(0, px_str.length-2));
+  }
 
-    const field_pos = this.Scale_Pos(this.obj_pos, {x: field.width(), y: field.height()}, true);
+  Render_Objs(field)
+  {
+    const ctx = this.objs_canvas.getContext("2d");
+    ctx.fillStyle = "#f00";
+    ctx.clearRect(0, 0, this.objs_canvas.width, this.objs_canvas.height); 
+
+    for (let i = 0; i < this.objs.length; i++)
+    {
+      this.Render_Obj(field, this.objs[i], ctx);
+    }
+  }
+
+  Render_Obj(field, obj, ctx)
+  {
+    const field_pos = this.Scale_Pos(obj, {x: field.width(), y: field.height()}, true);
     const dx = field.getXVelocity(field_pos.x, field_pos.y)*100;
     const dy = field.getYVelocity(field_pos.x, field_pos.y)*100;
-    this.obj_pos.x += dx;
-    this.obj_pos.y += dy;
+    obj.x += dx;
+    obj.y += dy;
 
-    ctx.clearRect(0, 0, canvas_obj.width, canvas_obj.height); 
     ctx.beginPath(); 
-    ctx.arc (this.obj_pos.x, this.obj_pos.y, 5, 0, 2 * Math.PI, false); 
+    ctx.arc (obj.x, obj.y, 5, 0, 2 * Math.PI, false); 
     ctx.fill(); 
   }
 
@@ -204,7 +231,7 @@ class Fluid_Canvas extends HTMLElement
       }
     }
 
-    this.Render_Obj(field);
+    this.Render_Objs(field);
   }
 
   Callback_displayVelocity(field)
