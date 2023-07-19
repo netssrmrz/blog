@@ -38,12 +38,12 @@ class Fluid_Canvas extends HTMLElement
   connectedCallback()
   {
     this.innerHTML = 
-      `<canvas id="canvas" style="width: 512px; height: 512px;" width="512" height="512"></canvas>`;
+      `<canvas id="canvas" width="1000" height="1000"></canvas>`;
     this.On_Load();
   }
 
   // Misc =========================================================================================
-  
+
   getTopLeftOfElement(element)
   {
     var top = 0;
@@ -66,10 +66,13 @@ class Fluid_Canvas extends HTMLElement
       canvas.height = this.displaySize;
       return this.Callback_displayVelocity;
     }
-    this.showVectors = true;
-    canvas.width = this.fieldRes;
-    canvas.height = this.fieldRes;
-    return this.Callback_displayDensity;
+    else
+    {
+      this.showVectors = true;
+      canvas.width = this.fieldRes;
+      canvas.height = this.fieldRes;
+      return this.Callback_Render_Density;
+    }
   }
 
   prepareBuffer(field)
@@ -98,9 +101,27 @@ class Fluid_Canvas extends HTMLElement
     this.bufferData.data[0] = 0;
   }
 
+  To_Field_Pos(clientX, clientY)
+  {
+    var o = this.getTopLeftOfElement(this.canvas);
+
+    const cdw_str = getComputedStyle(this.canvas).width;
+    const cdw = Number.parseFloat(cdw_str.substring(0, cdw_str.length-2));
+    const wr = this.displaySize / cdw;
+
+    const cdh_str = getComputedStyle(this.canvas).height;
+    const cdh = Number.parseFloat(cdw_str.substring(0, cdh_str.length-2));
+    const hr = this.displaySize / cdh;
+
+    const x = (clientX - o.left) * wr;
+    const y = (clientY - o.top) * hr;
+
+    return {x, y};
+  }
+
   // Callbacks & Events ===========================================================================
 
-  Callback_displayDensity(field)
+  Callback_Render_Density(field)
   {
     this.prepareBuffer(field);
     var context = this.canvas.getContext("2d");
@@ -110,8 +131,8 @@ class Fluid_Canvas extends HTMLElement
     if (this.bufferData)
     {
       var data = this.bufferData.data;
-      var dlength = data.length;
-      var j = -3;
+      //var dlength = data.length;
+      //var j = -3;
       if (this.clampData)
       {
         for (var x = 0; x < width; x++)
@@ -175,7 +196,7 @@ class Fluid_Canvas extends HTMLElement
     context.restore();
   }
 
-  Callback_prepareFrame(field)
+  Callback_UI(field)
   {
     if ((this.omx >= 0 && this.omx < this.displaySize && this.omy >= 0 && this.omy < this.displaySize) && this.mouseIsDown)
     {
@@ -183,13 +204,16 @@ class Fluid_Canvas extends HTMLElement
       var dy = this.my - this.omy;
       var length = (Math.sqrt(dx * dx + dy * dy) + 0.5) | 0;
       if (length < 1) length = 1;
+
       for (var i = 0; i < length; i++)
       {
         var x = (((this.omx + dx * (i / length)) / this.displaySize) * field.width()) | 0
         var y = (((this.omy + dy * (i / length)) / this.displaySize) * field.height()) | 0;
+
         field.setVelocity(x, y, dx, dy);
         field.setDensity(x, y, 50);
       }
+
       this.omx = this.mx;
       this.omy = this.my;
     }
@@ -201,7 +225,7 @@ class Fluid_Canvas extends HTMLElement
     }
   }
 
-  Callback_updateFrame()
+  Callback_Update_Frame_Rate()
   {
     this.field.update();
     var end = new Date;
@@ -214,15 +238,21 @@ class Fluid_Canvas extends HTMLElement
       frames = 0;
     }
     if (this.running)
-      this.interval = setTimeout(this.Callback_updateFrame, 10);
+      this.interval = setTimeout(this.Callback_Update_Frame_Rate, 10);
   }
 
   On_Load()
   {
     this.canvas = document.getElementById("canvas");
-    this.field = new FluidField();
+    this.canvas.onmousedown = this.On_Mouse_Down;
+    this.canvas.onmousemove = this.On_Mouse_Move;
+
     document.getElementById("iterations").value = 10;
-    this.field.setUICallback(this.Callback_prepareFrame);
+
+    this.field = new FluidField();
+    this.field.setUICallback(this.Callback_UI);
+    this.field.setDisplayFunction(this.toggleDisplayFunction(this.canvas));
+
     this.On_Change_Resolution();
 
     document.getElementById("start_btn").onclick = this.On_Click_Start;
@@ -232,10 +262,7 @@ class Fluid_Canvas extends HTMLElement
     document.getElementById("iterations").onchange = this.On_Change_Iterations;
     document.getElementById("resolution").onchange = this.On_Change_Resolution;
     window.onmouseup = this.On_Mouse_Up;
-    this.canvas.onmousedown = this.On_Mouse_Down;
-    this.canvas.onmousemove = this.On_Mouse_Move;
 
-    this.field.setDisplayFunction(this.toggleDisplayFunction(this.canvas));
     this.On_Click_Start();
   }
 
@@ -250,21 +277,21 @@ class Fluid_Canvas extends HTMLElement
     if (this.running)
       return;
     this.running = true;
-    this.interval = setTimeout(this.Callback_updateFrame, 10);
+    this.interval = setTimeout(this.Callback_Update_Frame_Rate, 10);
   }
 
   On_Mouse_Move(event)
   {
-    var o = this.getTopLeftOfElement(this.canvas);
-    this.mx = event.clientX - o.left;
-    this.my = event.clientY - o.top;
+    const field_pos = this.To_Field_Pos(event.clientX, event.clientY);
+    this.mx = field_pos.x;
+    this.my = field_pos.y;
   }
 
   On_Mouse_Down(event)
   {
-    var o = this.getTopLeftOfElement(this.canvas);
-    this.omx = this.mx = event.clientX - o.left;
-    this.omy = this.my = event.clientY - o.top;
+    const field_pos = this.To_Field_Pos(event.clientX, event.clientY);
+    this.omx = this.mx = field_pos.x;
+    this.omy = this.my = field_pos.y;
     if (!event.altKey && event.button == 0)
       this.mouseIsDown = true;
     else
