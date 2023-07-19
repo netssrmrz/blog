@@ -15,11 +15,23 @@
       {
         display: inline-block;
         width: 100%;
+        position: relative;
       }
       fluid-canvas #canvas
       {
         width: 100%;
         height: 100%;
+        xposition: absolute;
+        xtop: 0;
+        xleft: 0;
+      }
+      fluid-canvas #canvas_obj
+      {
+        width: 100%;
+        position: absolute;
+        top: 0;
+        left: 0;
+        pointer-events: none;
       }
     </style>
     <title>Oliver's simple fluid dynamics simulator</title>

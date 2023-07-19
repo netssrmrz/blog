@@ -25,6 +25,7 @@ class Fluid_Canvas extends HTMLElement
   start = new Date;
   frames = 0;
   clampData = false;
+  obj_pos = {x: 60, y: 60};
 
   // Lifecycle ====================================================================================
 
@@ -37,8 +38,10 @@ class Fluid_Canvas extends HTMLElement
 
   connectedCallback()
   {
-    this.innerHTML = 
-      `<canvas id="canvas" width="1000" height="1000"></canvas>`;
+    this.innerHTML = `
+      <canvas id="canvas"></canvas>
+      <canvas id="canvas_obj" width="1000" height="1000"></canvas>
+    `;
     this.On_Load();
   }
 
@@ -101,22 +104,55 @@ class Fluid_Canvas extends HTMLElement
     this.bufferData.data[0] = 0;
   }
 
-  To_Field_Pos(clientX, clientY)
+  To_Field_Pos(client_pos)
+  {
+    const dest_size = {x: this.displaySize, y: this.displaySize};
+    return this.Scale_Pos(client_pos, dest_size, false);
+  }
+
+  Scale_Pos(client_pos, dest_size, as_int)
   {
     var o = this.getTopLeftOfElement(this.canvas);
 
     const cdw_str = getComputedStyle(this.canvas).width;
     const cdw = Number.parseFloat(cdw_str.substring(0, cdw_str.length-2));
-    const wr = this.displaySize / cdw;
+    const wr = dest_size.x / cdw;
 
     const cdh_str = getComputedStyle(this.canvas).height;
     const cdh = Number.parseFloat(cdw_str.substring(0, cdh_str.length-2));
-    const hr = this.displaySize / cdh;
+    const hr = dest_size.y / cdh;
 
-    const x = (clientX - o.left) * wr;
-    const y = (clientY - o.top) * hr;
+    const res =
+    {
+      x: (client_pos.x - o.left) * wr,
+      y: (client_pos.y - o.top) * hr
+    };
 
-    return {x, y};
+    if (as_int)
+    {
+      res.x = Math.trunc(res.x);
+      res.y = Math.trunc(res.y);
+    }
+
+    return res;
+  }
+
+  Render_Obj(field)
+  {
+    const canvas_obj = this.querySelector("#canvas_obj");
+    const ctx = canvas_obj.getContext("2d");
+    ctx.fillStyle = "#f00";
+
+    const field_pos = this.Scale_Pos(this.obj_pos, {x: field.width(), y: field.height()}, true);
+    const dx = field.getXVelocity(field_pos.x, field_pos.y)*100;
+    const dy = field.getYVelocity(field_pos.x, field_pos.y)*100;
+    this.obj_pos.x += dx;
+    this.obj_pos.y += dy;
+
+    ctx.clearRect(0, 0, canvas_obj.width, canvas_obj.height); 
+    ctx.beginPath(); 
+    ctx.arc (this.obj_pos.x, this.obj_pos.y, 5, 0, 2 * Math.PI, false); 
+    ctx.fill(); 
   }
 
   // Callbacks & Events ===========================================================================
@@ -131,8 +167,6 @@ class Fluid_Canvas extends HTMLElement
     if (this.bufferData)
     {
       var data = this.bufferData.data;
-      //var dlength = data.length;
-      //var j = -3;
       if (this.clampData)
       {
         for (var x = 0; x < width; x++)
@@ -169,6 +203,8 @@ class Fluid_Canvas extends HTMLElement
         }
       }
     }
+
+    this.Render_Obj(field);
   }
 
   Callback_displayVelocity(field)
@@ -282,14 +318,14 @@ class Fluid_Canvas extends HTMLElement
 
   On_Mouse_Move(event)
   {
-    const field_pos = this.To_Field_Pos(event.clientX, event.clientY);
+    const field_pos = this.To_Field_Pos({x: event.clientX, y: event.clientY});
     this.mx = field_pos.x;
     this.my = field_pos.y;
   }
 
   On_Mouse_Down(event)
   {
-    const field_pos = this.To_Field_Pos(event.clientX, event.clientY);
+    const field_pos = this.To_Field_Pos({x: event.clientX, y: event.clientY});
     this.omx = this.mx = field_pos.x;
     this.omy = this.my = field_pos.y;
     if (!event.altKey && event.button == 0)
