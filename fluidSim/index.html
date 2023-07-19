@@ -10,9 +10,8 @@
             }
         </style>
         <title>Oliver's simple fluid dynamics simulator</title>
-        <script src="pressure.js"></script>
-        <script src="pressure-display.js"></script>
-        <script src="index.js"></script>
+        <script src="FluidField.js"></script>
+        <script src="Fluid_Canvas.js" type="module"></script>
     </head>
     <body>
         <table style="width: 100%;">
@@ -24,7 +23,7 @@
         <table style="width: 100%;">
             <tr>
                 <td>
-                    <canvas id=canvas style="width: 512px; height: 512px;" width=512 height=512></canvas>
+                  <fluid-canvas id="fc"></fluid-canvas>
                 </td>
                 <td>
                     Simple fluid dynamics simulator based on the navier-stokes equations, implemented in JavaScript.

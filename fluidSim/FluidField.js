@@ -269,6 +269,7 @@ function FluidField()
     advect(2, v, v0, u0, v0, dt);
     project(u, v, u0, v0);
   }
+  
   var uiCallback = function (d, u, v) { };
 
   function Field(dens, u, v)
@@ -348,6 +349,7 @@ function FluidField()
   var size;
   var displayFunc;
 
+  this.reset = reset;
   function reset()
   {
     rowSize = width + 2;
@@ -361,8 +363,6 @@ function FluidField()
     for (var i = 0; i < size; i++)
       dens_prev[i] = u_prev[i] = v_prev[i] = dens[i] = u[i] = v[i] = 0;
   }
-
-  this.reset = reset;
 
   this.setResolution = function (hRes, wRes)
   {
@@ -379,4 +379,3 @@ function FluidField()
   
   this.setResolution(64, 64);
 }
-
