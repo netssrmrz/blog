@@ -5,7 +5,6 @@ class Fluid_Canvas extends HTMLElement
   static tname = "fluid-canvas";
 
   canvas;
-  objs_canvas;
   field = null;
   fieldRes;
   showVectors = false;
@@ -26,7 +25,9 @@ class Fluid_Canvas extends HTMLElement
   start = new Date;
   frames = 0;
   clampData = false;
-  objs = new Array(100);
+
+  objs_canvas;
+  objs;
 
   // Lifecycle ====================================================================================
 
@@ -44,19 +45,7 @@ class Fluid_Canvas extends HTMLElement
       <canvas id="objs_canvas" width="1000" height="1000"></canvas>
     `;
 
-    this.objs_canvas = this.querySelector("#objs_canvas");
-    const w = this.To_Float(getComputedStyle(this.objs_canvas).width);
-    const h = this.To_Float(getComputedStyle(this.objs_canvas).height);
-    for (let i = 0; i < this.objs.length; i++)
-    {
-      const obj = 
-      {
-        x: Math.random() * w,
-        y: Math.random() * h
-      };
-      this.objs[i] = obj;
-    }
-
+    this.Init_Objs();
     this.On_Load();
   }
 
@@ -130,13 +119,11 @@ class Fluid_Canvas extends HTMLElement
     var o = this.getTopLeftOfElement(this.canvas);
 
     const cdw_str = getComputedStyle(this.canvas).width;
-    const cdw = Number.parseFloat(cdw_str.substring(0, cdw_str.length-2));
-    const wr = dest_size.x / cdw;
-
     const cdh_str = getComputedStyle(this.canvas).height;
-    const cdh = Number.parseFloat(cdw_str.substring(0, cdh_str.length-2));
+    const cdw = this.To_Float(cdw_str);
+    const cdh = this.To_Float(cdh_str);
+    const wr = dest_size.x / cdw;
     const hr = dest_size.y / cdh;
-
     const res =
     {
       x: (client_pos.x - o.left) * wr,
@@ -157,28 +144,157 @@ class Fluid_Canvas extends HTMLElement
     return Number.parseFloat(px_str.substring(0, px_str.length-2));
   }
 
-  Render_Objs(field)
+  static Limit_To_Range(value, min, max)
   {
-    const ctx = this.objs_canvas.getContext("2d");
-    ctx.fillStyle = "#f00";
-    ctx.clearRect(0, 0, this.objs_canvas.width, this.objs_canvas.height); 
+    let res = value;
+
+    if (res < min)
+    {
+      res = min;
+    }
+    else if (res > max)
+    {
+      res = max;
+    }
+
+    return res;
+  }
+
+  Set_Resolution(r)
+  {
+    this.canvas.width = r;
+    this.canvas.height = r;
+    this.fieldRes = r;
+    this.field.setResolution(r, r);
+  }
+
+  Get_Attribute_Int(name, def_value)
+  {
+    let res = def_value;
+    if (this.hasAttribute(name))
+    {
+      res = this.getAttribute(name);
+      res = parseInt(res);
+    }
+
+    return res;
+  }
+
+  static To_Colour(value)
+  {
+    const res =
+    {
+      r: Fluid_Canvas.Limit_To_Range(value, 0, 255),
+      g: 0,
+      b: 0
+    };
+
+    return res;
+  }
+
+  // Obj Processing ===============================================================================
+
+  Init_Objs()
+  {
+    this.objs = new Array(100);
+
+    this.objs_canvas = this.querySelector("#objs_canvas");
+    this.objs_canvas_sw = this.To_Float(getComputedStyle(this.objs_canvas).width);
+    this.objs_canvas_sh = this.To_Float(getComputedStyle(this.objs_canvas).height);
+
+    this.objs_ctx = this.objs_canvas.getContext("2d");
+    this.objs_ctx.fillStyle = "#f00";
 
     for (let i = 0; i < this.objs.length; i++)
     {
-      this.Render_Obj(field, this.objs[i], ctx);
+      const obj = 
+      {
+        id: i,
+        class_name: "cat",
+        x: Math.random() * this.objs_canvas_sw,
+        y: Math.random() * this.objs_canvas_sh,
+        r: 5,
+        Render: this.Render_Obj,
+        Update: this.Update_Obj
+      };
+      this.objs[i] = obj;
+    }
+
+    const home_obj = 
+    {
+      id: this.objs.length,
+      class_name: "home",
+      x: this.objs_canvas_sw / 2,
+      y: this.objs_canvas_sh / 2,
+      r: 40,
+      Render: this.Render_Obj_Home,
+      Update: this.Update_Obj_Home
+    };
+    this.objs.push(home_obj);
+  }
+
+  Process_Objs(field)
+  {
+    field.canvas = this;
+    for (let i = 0; i < this.objs.length; i++)
+    {
+      const obj = this.objs[i];
+      if (obj?.Update)
+      {
+        obj.Update(field);
+      }
+    }
+
+    this.objs_ctx.clearRect(0, 0, this.objs_canvas.width, this.objs_canvas.height); 
+    for (let i = 0; i < this.objs.length; i++)
+    {
+      const obj = this.objs[i];
+      if (obj?.Render)
+      {
+        obj.Render(this.objs_ctx);
+      }
     }
   }
 
-  Render_Obj(field, obj, ctx)
+  Update_Obj(field)
   {
-    const field_pos = this.Scale_Pos(obj, {x: field.width(), y: field.height()}, true);
+    const field_pos = field.canvas.Scale_Pos(this, {x: field.width(), y: field.height()}, true);
     const dx = field.getXVelocity(field_pos.x, field_pos.y)*100;
     const dy = field.getYVelocity(field_pos.x, field_pos.y)*100;
-    obj.x += dx;
-    obj.y += dy;
+    this.x += dx;
+    this.y += dy;
 
+    this.x = Fluid_Canvas.Limit_To_Range(this.x, 0, this.objs_canvas_sw-80);
+    this.y = Fluid_Canvas.Limit_To_Range(this.y, 0, this.objs_canvas_sh-80);
+  }
+  
+  Update_Obj_Home(field)
+  {
+    const objs = field.canvas.objs;
+    const cats = objs.filter(o => o?.class_name == "cat");
+    const home = objs.find(o => o?.class_name == "home");
+
+    for (const cat of cats)
+    {
+      const is_home = Utils.Is_Circle_Circle_Collision(home.x, home.y, home.r, cat.x, cat.y, cat.r);
+      if (is_home)
+      {
+        objs[cat.id] = null;
+      }
+    }
+  }
+
+  Render_Obj(ctx)
+  {
     ctx.beginPath(); 
-    ctx.arc (obj.x, obj.y, 5, 0, 2 * Math.PI, false); 
+    ctx.arc (this.x, this.y, this.r, 0, 2 * Math.PI, false); 
+    ctx.fill(); 
+  }
+
+  Render_Obj_Home(ctx)
+  {
+    ctx.beginPath(); 
+    ctx.arc (this.x, this.y, this.r, 0, 2 * Math.PI, false); 
     ctx.fill(); 
   }
 
@@ -194,26 +310,17 @@ class Fluid_Canvas extends HTMLElement
     if (this.bufferData)
     {
       var data = this.bufferData.data;
-      if (this.clampData)
+      for (var x = 0; x < width; x++)
       {
-        for (var x = 0; x < width; x++)
+        for (var y = 0; y < height; y++)
         {
-          for (var y = 0; y < height; y++)
-          {
-            var d = field.getDensity(x, y) * 255 / 5;
-            d = d | 0;
-            if (d > 255)
-              d = 255;
-            data[4 * (y * height + x) + 1] = d;
-          }
-        }
-      } 
-      else
-      {
-        for (var x = 0; x < width; x++)
-        {
-          for (var y = 0; y < height; y++)
-            data[4 * (y * height + x) + 1] = field.getDensity(x, y) * 255 / 5;
+          let d = field.getDensity(x, y) * 255 / 5;
+          const colour = Fluid_Canvas.To_Colour(d);
+
+          const pixel_idx = 4 * (y * height + x);
+          data[pixel_idx] = colour.r;
+          data[pixel_idx + 1] = colour.g;
+          data[pixel_idx + 2] = colour.b;
         }
       }
       context.putImageData(this.bufferData, 0, 0);
@@ -231,7 +338,7 @@ class Fluid_Canvas extends HTMLElement
       }
     }
 
-    this.Render_Objs(field);
+    this.Process_Objs(field);
   }
 
   Callback_displayVelocity(field)
@@ -316,14 +423,14 @@ class Fluid_Canvas extends HTMLElement
     this.field.setUICallback(this.Callback_UI);
     this.field.setDisplayFunction(this.toggleDisplayFunction(this.canvas));
 
-    this.On_Change_Resolution();
+    const r = this.Get_Attribute_Int("resolution", 128);
+    this.Set_Resolution(r);
 
     document.getElementById("start_btn").onclick = this.On_Click_Start;
     document.getElementById("stop_btn").onclick = this.On_Click_Stop;
     document.getElementById("reset_btn").onclick = this.On_Click_Reset;
     document.getElementById("toggle_btn").onclick = this.On_Click_Toggle;
     document.getElementById("iterations").onchange = this.On_Change_Iterations;
-    document.getElementById("resolution").onchange = this.On_Change_Resolution;
     window.onmouseup = this.On_Mouse_Up;
 
     this.On_Click_Start();
@@ -361,16 +468,6 @@ class Fluid_Canvas extends HTMLElement
       this.sources.push([this.mx, this.my]);
     event.preventDefault();
     return false;
-  }
-
-  On_Change_Resolution()
-  {
-    const res = document.getElementById("resolution");
-    var r = parseInt(res.value);
-    this.canvas.width = r;
-    this.canvas.height = r;
-    this.fieldRes = r;
-    this.field.setResolution(r, r);
   }
 
   On_Mouse_Up() 
