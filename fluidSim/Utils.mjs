@@ -368,14 +368,14 @@ class Utils
     return api.default;
   }
   
-  Interpolate_Colour(x, colours)
+  static Interpolate_Colour(x, colours)
   {
     const reds = colours.map(pt => {return {x: pt.x, y: pt.colour.r}});
     const greens = colours.map(pt => {return {x: pt.x, y: pt.colour.g}});
     const blues = colours.map(pt => {return {x: pt.x, y: pt.colour.b}});
-    const r = Math.round(Interpolate(x, reds));
-    const g = Math.round(Interpolate(x, greens));
-    const b = Math.round(Interpolate(x, blues));
+    const r = Math.round(Utils.Interpolate(x, reds));
+    const g = Math.round(Utils.Interpolate(x, greens));
+    const b = Math.round(Utils.Interpolate(x, blues));
   
     return {r, g, b};
   }
@@ -832,7 +832,7 @@ class Utils
   
   // Geometric ====================================================================================
 
-  Interpolate(x, pts)
+  static Interpolate(x, pts)
   {
     let y = null;
   
@@ -1065,6 +1065,21 @@ class Utils
     }
 
     return res;
+  }
+
+  static Mod(n, d)
+  {
+    return ((n % d) + d) % d;
+  }
+
+  static Wrap_To_Range(value, min, max)
+  {
+    const d = max - min;
+    const n = value - min;
+    const w = Utils.Mod(n, d);
+    const m = w + min;
+
+    return m;
   }
 }
 

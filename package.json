@@ -1,0 +1,14 @@
+{
+  "name": "blog-tests",
+  "version": "1.0.0",
+  "description": "Unit tests for Machete blog projects",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha"
+  },
+  "author": "Steven Ramirez",
+  "license": "ISC",
+  "dependencies": {
+    "mocha": "^10.2.0"
+  }
+}

@@ -1,4 +1,4 @@
-import Utils from "./Utils.js";
+import Utils from "./Utils.mjs";
 
 class Fluid_Canvas extends HTMLElement
 {
@@ -7,24 +7,14 @@ class Fluid_Canvas extends HTMLElement
   canvas;
   field = null;
   fieldRes;
-  showVectors = false;
   running = false;
   interval = null;
-  sources = [];
   buffer;
   bufferData;
-  frames = 0;
-  force = 5;
-  source = 100;
-  omx;
-  omy;
-  mx;
-  my;
   mouseIsDown = false;
-  displaySize = 512;
   start = new Date;
-  frames = 0;
   clampData = false;
+  score = 0;
 
   objs_canvas;
   objs;
@@ -43,9 +33,15 @@ class Fluid_Canvas extends HTMLElement
     this.innerHTML = `
       <canvas id="canvas"></canvas>
       <canvas id="objs_canvas" width="1000" height="1000"></canvas>
+      <span id="score_elem"></span>
+      <img id="home_img" src="image/home.png" hidden>
+      <img id="obj_img" src="image/cats.png" hidden>  
+      <div id="intro_dlg">
+        Use touch or the mouse to guide these floating nauti-cats to their island home, in the middle
+        of the lake, before time runs out! Press "New Game" to begin.
+      </div>
     `;
 
-    this.Init_Objs();
     this.On_Load();
   }
 
@@ -62,24 +58,6 @@ class Fluid_Canvas extends HTMLElement
     } 
     while (element = element.offsetParent);
     return { left: left, top: top };
-  }
-    
-  toggleDisplayFunction(canvas)
-  {
-    if (this.showVectors)
-    {
-      this.showVectors = false;
-      canvas.width = this.displaySize;
-      canvas.height = this.displaySize;
-      return this.Callback_displayVelocity;
-    }
-    else
-    {
-      this.showVectors = true;
-      canvas.width = this.fieldRes;
-      canvas.height = this.fieldRes;
-      return this.Callback_Render_Density;
-    }
   }
 
   prepareBuffer(field)
@@ -108,26 +86,14 @@ class Fluid_Canvas extends HTMLElement
     this.bufferData.data[0] = 0;
   }
 
-  To_Field_Pos(client_pos)
+  Scale_Pos(src_pos, src_size, dest_size, as_int)
   {
-    const dest_size = {x: this.displaySize, y: this.displaySize};
-    return this.Scale_Pos(client_pos, dest_size, false);
-  }
-
-  Scale_Pos(client_pos, dest_size, as_int)
-  {
-    var o = this.getTopLeftOfElement(this.canvas);
-
-    const cdw_str = getComputedStyle(this.canvas).width;
-    const cdh_str = getComputedStyle(this.canvas).height;
-    const cdw = this.To_Float(cdw_str);
-    const cdh = this.To_Float(cdh_str);
-    const wr = dest_size.x / cdw;
-    const hr = dest_size.y / cdh;
+    const wr = dest_size.x / src_size.x;
+    const hr = dest_size.y / src_size.y;
     const res =
     {
-      x: (client_pos.x - o.left) * wr,
-      y: (client_pos.y - o.top) * hr
+      x: src_pos.x * wr,
+      y: src_pos.y * hr
     };
 
     if (as_int)
@@ -182,14 +148,44 @@ class Fluid_Canvas extends HTMLElement
 
   static To_Colour(value)
   {
-    const res =
-    {
-      r: Fluid_Canvas.Limit_To_Range(value, 0, 255),
-      g: 0,
-      b: 0
-    };
+    const min = 60;
+    const colours =
+    [
+      {x: 0,   colour: {r: 173, g: 205, b: 212}},
+      {x: 50,  colour: {r: 10, g: 56, b: 89}}, // dark blue
+      {x: 100, colour: {r: 236, g: 235, b: 238}}, // almost white
+      {x: 150, colour: {r: 134, g: 155, b: 183}}, // light blue
+      {x: 200, colour: {r: 124, g: 132, b: 108}}, // grey
+      {x: 250, colour: {r: 135, g: 185, b: 76}}, // green
+      {x: 300, colour: {r: 173, g: 205, b: 212}},
+    ];
+    const v = Utils.Wrap_To_Range(value, 0, 300);
+    const res = Utils.Interpolate_Colour(v, colours);
 
     return res;
+  }
+
+  Start()
+  {
+    this.running = true;
+    this.interval = setTimeout(this.Callback_Update_Frame, 10);
+    this.intro_dlg.style.display = "none";
+    this.start_btn.innerText = "Pause";
+  }
+
+  Pause()
+  {
+    this.running = false;
+    clearTimeout(this.interval);
+    this.start_btn.innerText = "Start";
+  }
+
+  Reset()
+  {
+    this.Init_Objs();
+    this.field.reset(); 
+    this.Start();
+    this.start_btn.hidden = false;
   }
 
   // Obj Processing ===============================================================================
@@ -199,8 +195,8 @@ class Fluid_Canvas extends HTMLElement
     this.objs = new Array(100);
 
     this.objs_canvas = this.querySelector("#objs_canvas");
-    this.objs_canvas_sw = this.To_Float(getComputedStyle(this.objs_canvas).width);
-    this.objs_canvas_sh = this.To_Float(getComputedStyle(this.objs_canvas).height);
+    this.objs_canvas_sw = this.objs_canvas.width;
+    this.objs_canvas_sh = this.objs_canvas.height;
 
     this.objs_ctx = this.objs_canvas.getContext("2d");
     this.objs_ctx.fillStyle = "#f00";
@@ -213,12 +209,59 @@ class Fluid_Canvas extends HTMLElement
         class_name: "cat",
         x: Math.random() * this.objs_canvas_sw,
         y: Math.random() * this.objs_canvas_sh,
-        r: 5,
+        r: 8,
+        img: document.getElementById("obj_img"),
         Render: this.Render_Obj,
         Update: this.Update_Obj
       };
       this.objs[i] = obj;
     }
+
+    /*const limit = 1000;
+    const obj1 = 
+    {
+      id: 1,
+      class_name: "cat",
+      x: 0, y: 0,
+      r: 8,
+      img: document.getElementById("obj_img"),
+      Render: this.Render_Obj,
+      Update: this.Update_Obj
+    };
+    this.objs.push(obj1);
+    const obj2 = 
+    {
+      id: 2,
+      class_name: "cat",
+      x: limit, y: 0,
+      r: 8,
+      img: document.getElementById("obj_img"),
+      Render: this.Render_Obj,
+      Update: this.Update_Obj
+    };
+    this.objs.push(obj2);
+    const obj3 = 
+    {
+      id: 3,
+      class_name: "cat",
+      x: limit, y: limit,
+      r: 8,
+      img: document.getElementById("obj_img"),
+      Render: this.Render_Obj,
+      Update: this.Update_Obj
+    };
+    this.objs.push(obj3);
+    const obj4 = 
+    {
+      id: 4,
+      class_name: "cat",
+      x: 0, y: limit,
+      r: 8,
+      img: document.getElementById("obj_img"),
+      Render: this.Render_Obj,
+      Update: this.Update_Obj
+    };
+    this.objs.push(obj4);*/
 
     const home_obj = 
     {
@@ -226,7 +269,8 @@ class Fluid_Canvas extends HTMLElement
       class_name: "home",
       x: this.objs_canvas_sw / 2,
       y: this.objs_canvas_sh / 2,
-      r: 40,
+      r: 75,
+      img: document.getElementById("home_img"),
       Render: this.Render_Obj_Home,
       Update: this.Update_Obj_Home
     };
@@ -258,14 +302,18 @@ class Fluid_Canvas extends HTMLElement
 
   Update_Obj(field)
   {
-    const field_pos = field.canvas.Scale_Pos(this, {x: field.width(), y: field.height()}, true);
-    const dx = field.getXVelocity(field_pos.x, field_pos.y)*100;
-    const dy = field.getYVelocity(field_pos.x, field_pos.y)*100;
-    this.x += dx;
-    this.y += dy;
+    const src_size = {x: field.canvas.objs_canvas_sw, y: field.canvas.objs_canvas_sh};
+    const dest_size = {x: field.width(), y: field.height()};
+    const field_pos = field.canvas.Scale_Pos(this, src_size, dest_size, true);
 
-    this.x = Fluid_Canvas.Limit_To_Range(this.x, 0, this.objs_canvas_sw-80);
-    this.y = Fluid_Canvas.Limit_To_Range(this.y, 0, this.objs_canvas_sh-80);
+    this.vx = field.getXVelocity(field_pos.x, field_pos.y)*100;
+    this.vy = field.getYVelocity(field_pos.x, field_pos.y)*100;
+
+    this.x += this.vx;
+    this.y += this.vy;
+
+    this.x = Fluid_Canvas.Limit_To_Range(this.x, 0, field.canvas.objs_canvas_sw);
+    this.y = Fluid_Canvas.Limit_To_Range(this.y, 0, field.canvas.objs_canvas_sh);
   }
   
   Update_Obj_Home(field)
@@ -279,23 +327,38 @@ class Fluid_Canvas extends HTMLElement
       const is_home = Utils.Is_Circle_Circle_Collision(home.x, home.y, home.r, cat.x, cat.y, cat.r);
       if (is_home)
       {
-        objs[cat.id] = null;
+        const idx = objs.indexOf(cat);
+        objs[idx] = null;
+        field.canvas.score++;
+        field.canvas.Render_Score();
       }
     }
   }
 
+  Render_Score()
+  {
+    this.score_elem.innerText = this.score;
+    this.score_elem.classList.add("anim-zoom");
+  }
+
   Render_Obj(ctx)
   {
-    ctx.beginPath(); 
-    ctx.arc (this.x, this.y, this.r, 0, 2 * Math.PI, false); 
-    ctx.fill(); 
+    //ctx.beginPath(); 
+    //ctx.arc (this.x, this.y, this.r, 0, 2 * Math.PI, false); 
+    //ctx.fill(); 
+
+    const dir = Utils.Calc_Direction(this.vx, -this.vy);
+    const frame_dy = dir * 32 + 1;
+    ctx.drawImage(this.img, 0, frame_dy, 32, 32, this.x - 16, this.y - 22, 32, 32);
   }
 
   Render_Obj_Home(ctx)
   {
-    ctx.beginPath(); 
-    ctx.arc (this.x, this.y, this.r, 0, 2 * Math.PI, false); 
-    ctx.fill(); 
+    //ctx.beginPath(); 
+    //ctx.arc (this.x, this.y, this.r, 0, 2 * Math.PI, false); 
+    //ctx.fill(); 
+
+    ctx.drawImage(this.img, this.x - 70, this.y - 94);
   }
 
   // Callbacks & Events ===========================================================================
@@ -341,131 +404,85 @@ class Fluid_Canvas extends HTMLElement
     this.Process_Objs(field);
   }
 
-  Callback_displayVelocity(field)
-  {
-    var context = this.canvas.getContext("2d");
-    context.save();
-    context.lineWidth = 1;
-    var wScale = this.canvas.width / field.width();
-    var hScale = this.canvas.height / field.height();
-    context.fillStyle = "black";
-    context.fillRect(0, 0, this.canvas.width, this.canvas.height);
-    context.strokeStyle = "rgb(0,255,0)";
-    var vectorScale = 10;
-    context.beginPath();
-    for (var x = 0; x < field.width(); x++)
-    {
-      for (var y = 0; y < field.height(); y++)
-      {
-        context.moveTo(x * wScale + 0.5 * wScale, y * hScale + 0.5 * hScale);
-        context.lineTo((x + 0.5 + vectorScale * field.getXVelocity(x, y)) * wScale,
-          (y + 0.5 + vectorScale * field.getYVelocity(x, y)) * hScale);
-      }
-    }
-    context.stroke();
-    context.restore();
-  }
-
   Callback_UI(field)
   {
-    if ((this.omx >= 0 && this.omx < this.displaySize && this.omy >= 0 && this.omy < this.displaySize) && this.mouseIsDown)
+    if (this.mouseIsDown)
     {
-      var dx = this.mx - this.omx;
-      var dy = this.my - this.omy;
+      var dx = this.m_pos.x - this.o_pos.x;
+      var dy = this.m_pos.y - this.o_pos.y;
       var length = (Math.sqrt(dx * dx + dy * dy) + 0.5) | 0;
       if (length < 1) length = 1;
 
       for (var i = 0; i < length; i++)
       {
-        var x = (((this.omx + dx * (i / length)) / this.displaySize) * field.width()) | 0
-        var y = (((this.omy + dy * (i / length)) / this.displaySize) * field.height()) | 0;
+        const src_pos =
+        {
+          x: i / length * dx + this.o_pos.x,
+          y: i / length * dy + this.o_pos.y
+        };
+        const rect = this.canvas.getBoundingClientRect();
+        const src_size = {x: rect.width, y: rect.height};
+        const dst_size = {x: field.width(), y: field.height()};
+        const dst_pos = this.Scale_Pos(src_pos, src_size, dst_size, true);
 
-        field.setVelocity(x, y, dx, dy);
-        field.setDensity(x, y, 50);
+        field.setVelocity(dst_pos.x, dst_pos.y, dx, dy);
+        field.setDensity(dst_pos.x, dst_pos.y, 50);
       }
 
-      this.omx = this.mx;
-      this.omy = this.my;
-    }
-    for (var i = 0; i < this.sources.length; i++)
-    {
-      var x = ((this.sources[i][0] / this.displaySize) * field.width()) | 0;
-      var y = ((this.sources[i][1] / this.displaySize) * field.height()) | 0;
-      field.setDensity(x, y, 30);
+      this.o_pos = this.m_pos;
     }
   }
 
-  Callback_Update_Frame_Rate()
+  Callback_Update_Frame()
   {
     this.field.update();
-    var end = new Date;
-    frames++;
-    if ((end - this.start) > 1000)
-    {
-      const message = "FPS: " + ((1000 * frames / (end - this.start) + 0.5) | 0);
-      document.getElementById("log").innerHTML = message;
-      this.start = end;
-      frames = 0;
-    }
     if (this.running)
-      this.interval = setTimeout(this.Callback_Update_Frame_Rate, 10);
+      this.interval = setTimeout(this.Callback_Update_Frame, 10);
   }
 
   On_Load()
   {
+    this.score_elem = document.getElementById("score_elem");
+    this.score_elem.addEventListener("animationend", this.On_Transition_Ends);
+
     this.canvas = document.getElementById("canvas");
     this.canvas.onmousedown = this.On_Mouse_Down;
     this.canvas.onmousemove = this.On_Mouse_Move;
 
-    document.getElementById("iterations").value = 10;
-
     this.field = new FluidField();
     this.field.setUICallback(this.Callback_UI);
-    this.field.setDisplayFunction(this.toggleDisplayFunction(this.canvas));
+
+    this.canvas.width = this.fieldRes;
+    this.canvas.height = this.fieldRes;
+    this.field.setDisplayFunction(this.Callback_Render_Density);
 
     const r = this.Get_Attribute_Int("resolution", 128);
     this.Set_Resolution(r);
 
-    document.getElementById("start_btn").onclick = this.On_Click_Start;
-    document.getElementById("stop_btn").onclick = this.On_Click_Stop;
-    document.getElementById("reset_btn").onclick = this.On_Click_Reset;
-    document.getElementById("toggle_btn").onclick = this.On_Click_Toggle;
-    document.getElementById("iterations").onchange = this.On_Change_Iterations;
+    this.start_btn = document.getElementById("start_btn");
+    this.start_btn.onclick = this.On_Click_Toggle;
+    this.reset_btn = document.getElementById("reset_btn");
+    this.reset_btn.onclick = this.On_Click_Reset;
+    this.intro_dlg = document.getElementById("intro_dlg");
     window.onmouseup = this.On_Mouse_Up;
-
-    this.On_Click_Start();
   }
 
-  On_Click_Stop()
+  On_Transition_Ends()
   {
-    this.running = false;
-    clearTimeout(this.interval);
-  }
-
-  On_Click_Start()
-  {
-    if (this.running)
-      return;
-    this.running = true;
-    this.interval = setTimeout(this.Callback_Update_Frame_Rate, 10);
+    this.score_elem.classList.remove("anim-zoom");
   }
 
   On_Mouse_Move(event)
   {
-    const field_pos = this.To_Field_Pos({x: event.clientX, y: event.clientY});
-    this.mx = field_pos.x;
-    this.my = field_pos.y;
+    this.m_pos = {x: event.offsetX, y: event.offsetY};
   }
 
   On_Mouse_Down(event)
   {
-    const field_pos = this.To_Field_Pos({x: event.clientX, y: event.clientY});
-    this.omx = this.mx = field_pos.x;
-    this.omy = this.my = field_pos.y;
+    this.m_pos = {x: event.offsetX, y: event.offsetY};
+    this.o_pos = this.m_pos;
     if (!event.altKey && event.button == 0)
       this.mouseIsDown = true;
-    else
-      this.sources.push([this.mx, this.my]);
     event.preventDefault();
     return false;
   }
@@ -475,21 +492,21 @@ class Fluid_Canvas extends HTMLElement
     this.mouseIsDown = false; 
   }
 
-  On_Click_Reset()
-  {
-    this.field.reset(); 
-    frames = 0; 
-    this.sources = [];
-  }
-
   On_Click_Toggle()
   {
-    this.field.setDisplayFunction(this.toggleDisplayFunction(this.canvas));
+    if (this.running)
+    {
+      this.Pause();
+    }
+    else
+    {
+      this.Start();
+    }
   }
 
-  On_Change_Iterations(event)
+  On_Click_Reset()
   {
-    this.field.setIterations(event.target.value);
+    this.Reset();
   }
 }
 
