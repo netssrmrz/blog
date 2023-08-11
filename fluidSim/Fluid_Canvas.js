@@ -1,3 +1,29 @@
+// Based on http://www.dgp.toronto.edu/people/stam/reality/Research/pdf/GDC03.pdf
+/**
+ * Copyright (c) 2023 Steven Ramirez <http://ramirezsystems.blogspot.com/>
+ * 
+ * Permission is hereby granted, free of charge, to any person
+ * obtaining a copy of this software and associated documentation
+ * files (the "Software"), to deal in the Software without
+ * restriction, including without limitation the rights to use,
+ * copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the
+ * Software is furnished to do so, subject to the following
+ * conditions:
+ * 
+ * The above copyright notice and this permission notice shall be
+ * included in all copies or substantial portions of the Software.
+ * 
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+ * EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES
+ * OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+ * NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT
+ * HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY,
+ * WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
+ * FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
+ * OTHER DEALINGS IN THE SOFTWARE.
+ */
+
 import Utils from "./Utils.mjs";
 
 class Fluid_Canvas extends HTMLElement
@@ -15,9 +41,9 @@ class Fluid_Canvas extends HTMLElement
   start = new Date;
   clampData = false;
   score = 0;
-
   objs_canvas;
   objs;
+  max_clock = 60;
 
   // Lifecycle ====================================================================================
 
@@ -33,12 +59,16 @@ class Fluid_Canvas extends HTMLElement
     this.innerHTML = `
       <canvas id="canvas"></canvas>
       <canvas id="objs_canvas" width="1000" height="1000"></canvas>
+      <canvas id="clock_canvas" width="200" height="200"></canvas>
       <span id="score_elem"></span>
       <img id="home_img" src="image/home.png" hidden>
-      <img id="obj_img" src="image/cats.png" hidden>  
-      <div id="intro_dlg">
+      <img id="cat_img" src="image/cats.png" hidden>  
+      <div id="intro_dlg" class="msg">
         Use touch or the mouse to guide these floating nauti-cats to their island home, in the middle
         of the lake, before time runs out! Press "New Game" to begin.
+      </div>
+      <div id="finish_dlg" class="msg">
+        You're out of time. You saved <span id="cat_count">0</span> nauti-cats!
       </div>
     `;
 
@@ -170,13 +200,16 @@ class Fluid_Canvas extends HTMLElement
     this.running = true;
     this.interval = setTimeout(this.Callback_Update_Frame, 10);
     this.intro_dlg.style.display = "none";
+    this.finish_dlg.style.display = "none";
     this.start_btn.innerText = "Pause";
+    this.interval_clock = setTimeout(this.Callback_Process_Clock, 1000);
   }
 
   Pause()
   {
     this.running = false;
     clearTimeout(this.interval);
+    clearTimeout(this.interval_clock);
     this.start_btn.innerText = "Start";
   }
 
@@ -184,8 +217,19 @@ class Fluid_Canvas extends HTMLElement
   {
     this.Init_Objs();
     this.field.reset(); 
+    this.clock = this.max_clock;
     this.Start();
     this.start_btn.hidden = false;
+  }
+
+  Finish()
+  {
+    this.running = false;
+    clearTimeout(this.interval);
+    clearTimeout(this.interval_clock);
+    this.start_btn.hidden = true;
+    this.finish_dlg.style.display = "flex";
+    this.cat_count.innerText = this.score;
   }
 
   // Obj Processing ===============================================================================
@@ -194,11 +238,9 @@ class Fluid_Canvas extends HTMLElement
   {
     this.objs = new Array(100);
 
-    this.objs_canvas = this.querySelector("#objs_canvas");
     this.objs_canvas_sw = this.objs_canvas.width;
     this.objs_canvas_sh = this.objs_canvas.height;
 
-    this.objs_ctx = this.objs_canvas.getContext("2d");
     this.objs_ctx.fillStyle = "#f00";
 
     for (let i = 0; i < this.objs.length; i++)
@@ -210,7 +252,7 @@ class Fluid_Canvas extends HTMLElement
         x: Math.random() * this.objs_canvas_sw,
         y: Math.random() * this.objs_canvas_sh,
         r: 8,
-        img: document.getElementById("obj_img"),
+        img: this.cat_img,
         Render: this.Render_Obj,
         Update: this.Update_Obj
       };
@@ -224,7 +266,7 @@ class Fluid_Canvas extends HTMLElement
       class_name: "cat",
       x: 0, y: 0,
       r: 8,
-      img: document.getElementById("obj_img"),
+      img: this.cat_img,
       Render: this.Render_Obj,
       Update: this.Update_Obj
     };
@@ -235,7 +277,7 @@ class Fluid_Canvas extends HTMLElement
       class_name: "cat",
       x: limit, y: 0,
       r: 8,
-      img: document.getElementById("obj_img"),
+      img: this.cat_img,
       Render: this.Render_Obj,
       Update: this.Update_Obj
     };
@@ -246,7 +288,7 @@ class Fluid_Canvas extends HTMLElement
       class_name: "cat",
       x: limit, y: limit,
       r: 8,
-      img: document.getElementById("obj_img"),
+      img: this.cat_img,
       Render: this.Render_Obj,
       Update: this.Update_Obj
     };
@@ -257,7 +299,7 @@ class Fluid_Canvas extends HTMLElement
       class_name: "cat",
       x: 0, y: limit,
       r: 8,
-      img: document.getElementById("obj_img"),
+      img: this.cat_img,
       Render: this.Render_Obj,
       Update: this.Update_Obj
     };
@@ -270,7 +312,7 @@ class Fluid_Canvas extends HTMLElement
       x: this.objs_canvas_sw / 2,
       y: this.objs_canvas_sh / 2,
       r: 75,
-      img: document.getElementById("home_img"),
+      img: this.home_img,
       Render: this.Render_Obj_Home,
       Update: this.Update_Obj_Home
     };
@@ -361,12 +403,48 @@ class Fluid_Canvas extends HTMLElement
     ctx.drawImage(this.img, this.x - 70, this.y - 94);
   }
 
+  Render_Clock(ctx)
+  {
+    const r = ctx.canvas.width / 2;
+    const r2 = r - 20;
+    const i = 2*Math.PI / this.max_clock;
+    const start_angle = Math.PI * 1.5;
+    const end_angle = start_angle - i * this.clock;
+
+    ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); 
+
+    ctx.fillStyle = "#f00";
+    ctx.beginPath();
+    ctx.moveTo(r, r);
+    ctx.arc(r, r, r, start_angle, end_angle, true);
+    ctx.fill();
+
+    ctx.fillStyle = "#f88";
+    ctx.beginPath();
+    ctx.moveTo(r, r);
+    ctx.arc(r, r, r2, start_angle, end_angle, true);
+    ctx.fill();
+  }
+
   // Callbacks & Events ===========================================================================
+
+  Callback_Process_Clock()
+  {
+    this.Render_Clock(this.clock_ctx);
+    if (this.clock <= 0)
+    {
+      this.Finish();
+    }
+    else
+    {
+      this.clock--;
+      this.interval_clock = setTimeout(this.Callback_Process_Clock, 1000);
+    }
+  }
 
   Callback_Render_Density(field)
   {
     this.prepareBuffer(field);
-    var context = this.canvas.getContext("2d");
     var width = field.width();
     var height = field.height();
 
@@ -386,7 +464,7 @@ class Fluid_Canvas extends HTMLElement
           data[pixel_idx + 2] = colour.b;
         }
       }
-      context.putImageData(this.bufferData, 0, 0);
+      this.canvas_ctx.putImageData(this.bufferData, 0, 0);
     } 
     else
     {
@@ -395,8 +473,8 @@ class Fluid_Canvas extends HTMLElement
         for (var y = 0; y < height; y++)
         {
           var d = field.getDensity(x, y) / 5;
-          context.setFillColor(0, d, 0, 1);
-          context.fillRect(x, y, 1, 1);
+          this.canvas_ctx.setFillColor(0, d, 0, 1);
+          this.canvas_ctx.fillRect(x, y, 1, 1);
         }
       }
     }
@@ -442,10 +520,16 @@ class Fluid_Canvas extends HTMLElement
 
   On_Load()
   {
-    this.score_elem = document.getElementById("score_elem");
+    Utils.Set_Id_Shortcuts(this, this);
+
+    this.finish_dlg.style.display = "none";
+
+    this.objs_ctx = this.objs_canvas.getContext("2d");
+    this.canvas_ctx = this.canvas.getContext("2d");
+    this.clock_ctx = this.clock_canvas.getContext("2d");
+
     this.score_elem.addEventListener("animationend", this.On_Transition_Ends);
 
-    this.canvas = document.getElementById("canvas");
     this.canvas.onmousedown = this.On_Mouse_Down;
     this.canvas.onmousemove = this.On_Mouse_Move;
 
@@ -463,7 +547,7 @@ class Fluid_Canvas extends HTMLElement
     this.start_btn.onclick = this.On_Click_Toggle;
     this.reset_btn = document.getElementById("reset_btn");
     this.reset_btn.onclick = this.On_Click_Reset;
-    this.intro_dlg = document.getElementById("intro_dlg");
+
     window.onmouseup = this.On_Mouse_Up;
   }
 
