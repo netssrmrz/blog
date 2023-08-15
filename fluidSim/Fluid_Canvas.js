@@ -232,6 +232,11 @@ class Fluid_Canvas extends HTMLElement
     this.cat_count.innerText = this.score;
   }
 
+  Get_Event_Pos(event)
+  {
+    return {x: event.offsetX, y: event.offsetY};
+  }
+
   // Obj Processing ===============================================================================
 
   Init_Objs()
@@ -528,11 +533,6 @@ class Fluid_Canvas extends HTMLElement
     this.canvas_ctx = this.canvas.getContext("2d");
     this.clock_ctx = this.clock_canvas.getContext("2d");
 
-    this.score_elem.addEventListener("animationend", this.On_Transition_Ends);
-
-    this.canvas.onmousedown = this.On_Mouse_Down;
-    this.canvas.onmousemove = this.On_Mouse_Move;
-
     this.field = new FluidField();
     this.field.setUICallback(this.Callback_UI);
 
@@ -544,11 +544,14 @@ class Fluid_Canvas extends HTMLElement
     this.Set_Resolution(r);
 
     this.start_btn = document.getElementById("start_btn");
-    this.start_btn.onclick = this.On_Click_Toggle;
     this.reset_btn = document.getElementById("reset_btn");
-    this.reset_btn.onclick = this.On_Click_Reset;
 
-    window.onmouseup = this.On_Mouse_Up;
+    this.score_elem.addEventListener("animationend", this.On_Transition_Ends);
+    this.start_btn.addEventListener("click", this.On_Click_Toggle);
+    this.reset_btn.addEventListener("click", this.On_Click_Reset);
+    this.canvas.addEventListener("pointerdown", this.On_Mouse_Down);
+    this.canvas.addEventListener("pointermove", this.On_Mouse_Move);
+    window.addEventListener("pointerup", this.On_Mouse_Up);
   }
 
   On_Transition_Ends()
@@ -558,16 +561,16 @@ class Fluid_Canvas extends HTMLElement
 
   On_Mouse_Move(event)
   {
-    this.m_pos = {x: event.offsetX, y: event.offsetY};
+    this.m_pos = this.Get_Event_Pos(event);
   }
 
   On_Mouse_Down(event)
   {
-    this.m_pos = {x: event.offsetX, y: event.offsetY};
-    this.o_pos = this.m_pos;
-    if (!event.altKey && event.button == 0)
-      this.mouseIsDown = true;
     event.preventDefault();
+    this.mouseIsDown = true;
+    this.m_pos = this.Get_Event_Pos(event);
+    this.o_pos = this.m_pos;
+
     return false;
   }
 
