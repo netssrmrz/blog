@@ -396,7 +396,8 @@ class Fluid_Canvas extends HTMLElement
 
     const dir = Utils.Calc_Direction(this.vx, -this.vy);
     const frame_dy = dir * 32 + 1;
-    ctx.drawImage(this.img, 0, frame_dy, 32, 32, this.x - 16, this.y - 22, 32, 32);
+    //ctx.drawImage(this.img, 0, frame_dy, 32, 32, this.x - 16, this.y - 22, 32, 32);
+    ctx.drawImage(this.img, 0, frame_dy, 32, 32, this.x - 16, this.y - 22, 64, 64);
   }
 
   Render_Obj_Home(ctx)
