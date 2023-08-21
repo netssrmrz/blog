@@ -20,7 +20,7 @@
       section
       {
         overflow: hidden;
-        margin: 0 0 100px 0;
+        margin-top: 50px;
       }
       video
       {
@@ -30,7 +30,7 @@
       {
         font-family: 'Playfair Display', serif;
         font-style: italic;
-        font-size: 6rem;
+        font-size: 5rem;
         border-left: 40px solid #f00;
         padding: 0 0 0 35px;
         vertical-align: bottom;
@@ -40,15 +40,15 @@
       {
         font-family: 'Playfair Display', serif;
         font-style: italic;
-        font-size: 2rem;
-        border-left: 30px solid #f00;
-        padding: 0 0 0 35px;
+        font-size: 2.5rem;
+        border-left: 15px solid #f00;
+        padding: 0 0 0 15px;
         vertical-align: bottom;
         letter-spacing: 4px;
       }
       h3
       {
-        font-size: 2rem;
+        font-size: 1rem;
       }
       a
       {
@@ -58,9 +58,13 @@
       }
       p
       {
-        font-size: 1rem;
+        font-size: 1.5rem;
         padding: 0;
-        margin: 0 0 100px 0;
+        margin: 0 0 50px 0;
+      }
+      ul
+      {
+        font-size: 1.5rem;
       }
       span
       {
@@ -110,7 +114,7 @@
       {
         padding: 0;
         margin: 0;
-        font-size: 3rem;
+        font-size: 2rem;
       }
 
       #s2 video
@@ -122,12 +126,42 @@
       {
         margin: 0 0 -40% 0;
       }
+
+      @media(min-resolution: 300dpi)
+      {
+        html
+        {
+          background-color: #0f0;
+        }
+        xh2
+        {
+          font-size: 3rem;
+          padding: 0 0 0 20px;
+        }
+        xp
+        {
+          font-size: 2rem;
+        }
+        xul
+        {
+          font-size: 2rem;
+        }
+
+        x#s1 p
+        {
+          font-size: 2rem;
+        }
+        xsection
+        {
+          margin-top: 100px;
+        }
+      }
     </style>
   </head>
 
   <body>
     <section id="s1">
-      <h3>Esteban Ramirez 21/08/2023</h3>
+      <h3>Esteban Ramirez - 21/08/2023</h3>
       <h1>Fooling with Fluids</h1>
       <video src="video/webgl-fluid-simulation.mp4" autoplay loop></video>
       <div>
