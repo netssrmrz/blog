@@ -6,34 +6,66 @@
     <title>Occam's Machete - Fooling with Fluids</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=Poppins:wght@300&display=swap" rel="stylesheet">    <style>
-      body
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=Poppins:wght@300&display=swap" rel="stylesheet">    
+    <style>
+      html
       {
+        font-size: 14px;
         font-family: 'Poppins', sans-serif;
-        font-size: 48px;
         background-color: #222;
         color: #bbb;
         padding: 0 100px;
         margin: 0;
       }
+      section
+      {
+        overflow: hidden;
+        margin: 0 0 100px 0;
+      }
       video
       {
-        xborder: 1px solid #f00;
+        width: 100%;
       }
       h1
       {
         font-family: 'Playfair Display', serif;
         font-style: italic;
-        font-size: 2em;
+        font-size: 6rem;
         border-left: 40px solid #f00;
         padding: 0 0 0 35px;
         vertical-align: bottom;
         letter-spacing: 4px;
       }
+      h2
+      {
+        font-family: 'Playfair Display', serif;
+        font-style: italic;
+        font-size: 2rem;
+        border-left: 30px solid #f00;
+        padding: 0 0 0 35px;
+        vertical-align: bottom;
+        letter-spacing: 4px;
+      }
+      h3
+      {
+        font-size: 2rem;
+      }
       a
       {
+        color: #bbb;
         animation: 2s alternate infinite pulse;
         text-decoration: none;
+      }
+      p
+      {
+        font-size: 1rem;
+        padding: 0;
+        margin: 0 0 100px 0;
+      }
+      span
+      {
+        border-left: 15px solid #f00;
+        padding: 0 0 0 15px;
       }
 
       @keyframes pulse
@@ -56,10 +88,10 @@
         height: 100vh;
         display: flex;
         flex-direction: column;
+        margin: 0;
       }
       #s1 video
       {
-        width: 100%;
         height: 100%;
         object-fit: cover;
         margin: 0 0 100px 0;
@@ -78,31 +110,24 @@
       {
         padding: 0;
         margin: 0;
+        font-size: 3rem;
       }
 
       #s2 video
       {
-        width: 100%;
         margin: 0 0 -50% 0;
       }
 
-      p
+      #s3 video
       {
-        xmargin: 0 0 1em 0;
-      }
-      a
-      {
-        color: #bbb;
-      }
-      section
-      {
-        xoverflow: hidden;
+        margin: 0 0 -40% 0;
       }
     </style>
   </head>
 
   <body>
     <section id="s1">
+      <h3>Esteban Ramirez 21/08/2023</h3>
       <h1>Fooling with Fluids</h1>
       <video src="video/webgl-fluid-simulation.mp4" autoplay loop></video>
       <div>
@@ -120,7 +145,7 @@
     <section id="s2">
       <div>
         <p>
-          Naturally, after fooling around with these websites, my first thought was "Surely someone's 
+          <span>N</span>aturally, after fooling around with these websites, my first thought was "Surely someone's 
           written a game with this stuff!". Unfortunately, most of what I came across were screensavers 
           and "stress-release" apps, with the only exception being a 
           <a href="https://js13kgames.com/games/interplanetary-postal-service/index.html">"lunar lander" game</a>. 
@@ -130,11 +155,10 @@
       </div>
       <video src="video/interplanetary-postal-service.mp4" autoplay loop></video>
     </section>
-    <section id="s3" hidden>
-      <video src="video/olivers-fluid-dynamics-simulator.mp4" autoplay loop></video>
+    <section id="s3">
       <div>
         <p>
-          So, where to start? "Oliver's simple fluid dynamics simulator" seemed like a good place. 
+          <span>S</span>o, where to start? "Oliver's simple fluid dynamics simulator" seemed like a good place. 
           It's JavaScript only, has no other dependencies, and runs reasonably on my ancient laptop. 
           Better still, it doesn't use any Frontend framework (apparently it's possible to build 
           stuff without React 😉). The code resides in three files with the heavy mathematical 
@@ -145,11 +169,12 @@
           <a href="https://nerget.com/fluidSim">site</a>.
         </p>
       </div>
+      <video src="video/olivers-fluid-dynamics-simulator.mp4" autoplay loop></video>
     </section>
-    <section id="s4" hidden>
+    <section id="s4">
       <div>
         <p>
-          Without knowing what kind of game to write, I proceeded to combine the JavaScript in 
+          <span>W</span>ithout knowing what kind of game to write, I proceeded to combine the JavaScript in 
           "index.html" and "pressure-display.js" into a single Web Component. In case it's not 
           obvious by now, I too will be sticking with JavaScript and the Vanilla JS framework. Why 
           not TypeScript and React? Because I intend to come out of this rabbit hole with my 
@@ -157,7 +182,7 @@
           game code is available on Github.
         </p>
         <p>
-          The game is, of course, ludicrously "simple". All you have to do is herd the cats into 
+          <span>T</span>he game is, of course, ludicrously "simple". All you have to do is herd the cats into 
           the central building. You do this by swiping currents with the mouse or via touch, until 
           time runs out. Oliver's code exposes a couple of functions to extract the "velocity" at a 
           given point on the surface of the fluid so I coupled this to a few floating cats 
@@ -168,11 +193,10 @@
       </div>
       <video src="video/nauti-cats.mp4" autoplay loop></video>
     </section>
-    <section id="s5" hidden>
-      <video src="video/digital-marbling.mp4" autoplay loop></video>
+    <section id="s5">
       <div>
         <p>
-          In conclusion, it would seem there's no reason why someone couldn't get filthy rich 
+          <span>I</span>n conclusion, it would seem there's no reason why someone couldn't get filthy rich 
           writing the next Floaty Bird, though, a more complex game world would help. To this end 
           we have Dan Schroeder's fluid dynamics simulation which allows one to build barriers 
           against which the fluid may flow. Additionally, there's the game Interplanetary Postal 
@@ -183,16 +207,17 @@
           finished reading Stam's original research paper.
         </p>
         <p>
-          Truly there are some incredibly talented people in this world and it's wonderful that 
+          <span>T</span>ruly there are some incredibly talented people in this world and it's wonderful that 
           idiots like me can, so easily, access and build on their work. It's both inspiring and 
           humbling. If I had half the ability of some of these folk, I'd have completed my humble 
           goal of world domination and decadent leisure by now.
         </p>
       </div>
+      <video src="video/digital-marbling.mp4" autoplay loop></video>
     </section>
-    <section id="s6" hidden>
+    <section id="s6">
       <p>
-        Almost forgot to mention, Nauti-Cats was only tested on Windows 10 Chrome v115, a Samsung 
+        <span>A</span>lmost forgot to mention, Nauti-Cats was only tested on Windows 10 Chrome v115, a Samsung 
         Galaxy Tab S6, and a Pixel 2 XL. If your device explodes due to processing overload, don't 
         blame me. Consider it an opportunity to upgrade.
       </p>
