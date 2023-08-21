@@ -4,7 +4,7 @@
   <head>
     <title>Occam's Machete - Fooling with Fluids</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=768px, initial-scale=1" />
+    <meta name="viewport" content="width=768, initial-scale=1" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=Poppins:wght@300&display=swap" rel="stylesheet">    
@@ -19,11 +19,19 @@
         padding-right: min(8%, 80px);
         margin: 0;
       }
+      body
+      {
+        margin: 0;
+      }
       section
       {
         overflow: hidden;
         margin-top: 50px;
         text-align: center;
+      }
+      header
+      {
+        xheight: 400px;
       }
       video
       {
@@ -37,6 +45,7 @@
         font-size: 5rem;
         border-left: 40px solid #f00;
         padding: 0 0 0 35px;
+        margin: 3rem 0;
         vertical-align: bottom;
         letter-spacing: 4px;
         text-align: start;
@@ -56,6 +65,7 @@
       {
         font-size: 1rem;
         text-align: start;
+        margin: 1em;
       }
       a
       {
@@ -97,28 +107,30 @@
       #s1
       {
         position: relative;
-        width: 100%;
-        height: 100vh;
+        min-height: 100vh;
         display: flex;
         flex-direction: column;
         margin: 0;
+        justify-content: space-between;
       }
       #s1 video
       {
+        position: absolute;
         height: 100%;
         object-fit: cover;
         margin: 0 0 100px 0;
         max-width: inherit;
+        z-index: -1;
+        top: 0;
+        left: 0;
       }
       #s1 div
       {
-        position: absolute;
-        bottom: 100px;
-        right: 0;
         width: 70%;
         background-color: #000c;
         padding: min(8%, 40px);
         margin: 0;
+        align-self: end;
       }
       #s1 p
       {
@@ -148,7 +160,7 @@
         {
           padding: 0 0 0 15px;
           border-left: 15px solid #f00;
-          font-size: 3rem;
+          font-size: 5rem;
         }
         span
         {
@@ -166,8 +178,10 @@
 
   <body>
     <section id="s1">
-      <h3>Esteban Ramirez - 21/08/2023</h3>
-      <h1>Fooling with Fluids</h1>
+      <header>
+        <h3>Esteban Ramirez - 21/08/2023</h3>
+        <h1>Fooling with Fluids</h1>
+      </header>
       <video src="video/webgl-fluid-simulation.mp4" autoplay loop muted playsinline></video>
       <div>
         <p>
