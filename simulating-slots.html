@@ -1,0 +1,333 @@
+<!doctype HTML>
+<html>
+
+  <head>
+    <title>Occam's Machete - Simulating Slots</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital@0;1&family=Poppins:wght@300&display=swap" rel="stylesheet">    
+    <style>
+      html
+      {
+        font-size: 14px;
+        font-family: 'Poppins', sans-serif;
+        background-color: #222;
+        color: #bbb;
+        padding-left: min(8%, 80px);
+        padding-right: min(8%, 80px);
+        margin: 0;
+      }
+      body
+      {
+        margin: 0;
+      }
+      section
+      {
+        margin-top: 50px;
+        text-align: center;
+      }
+      header
+      {
+        xheight: 400px;
+      }
+      video
+      {
+        width: 100%;
+        max-width: 800px;
+      }
+      h1
+      {
+        font-family: 'Playfair Display', serif;
+        font-style: italic;
+        font-size: 5rem;
+        border-left: 40px solid #f00;
+        padding: 0 0 0 35px;
+        margin: 3rem 0;
+        vertical-align: bottom;
+        letter-spacing: 4px;
+        text-align: start;
+        text-shadow: 5px 5px 4px black;
+      }
+      h2
+      {
+        font-family: 'Playfair Display', serif;
+        font-style: italic;
+        font-size: 2.5rem;
+        border-left: 15px solid #f00;
+        padding: 0 0 0 15px;
+        vertical-align: bottom;
+        letter-spacing: 4px;
+        text-align: start;
+      }
+      h3
+      {
+        font-size: 1rem;
+        text-align: start;
+        margin: 1em;
+      }
+      a
+      {
+        color: #bbb;
+        animation: 2s alternate infinite pulse;
+        text-decoration: none;
+      }
+      p
+      {
+        font-size: 1.5rem;
+        padding: 0;
+        margin: 0 0 50px 0;
+        text-align: start;
+      }
+      ul
+      {
+        font-size: 1.5rem;
+        text-align: start;
+      }
+      span
+      {
+        border-left: 15px solid #f00;
+        padding: 0 0 0 15px;
+      }
+      pre
+      {
+        text-align: left;
+        background-color: #333;
+        padding: 0 20px;
+        margin: 0;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+      }
+
+      @keyframes pulse
+      {
+        from
+        {
+          color: #bbb;
+        }
+
+        to
+        {
+          color: #fff;
+        }
+      }
+
+      #s1
+      {
+        position: relative;
+        min-height: 100vh;
+        display: flex;
+        flex-direction: column;
+        margin: 0;
+        justify-content: space-between;
+      }
+      #s1 video
+      {
+        position: absolute;
+        height: 100%;
+        object-fit: cover;
+        margin: 0 0 100px 0;
+        max-width: inherit;
+        z-index: -1;
+        top: 0;
+        left: 0;
+      }
+      #s1 div
+      {
+        width: 70%;
+        background-color: #000c;
+        padding: min(8%, 40px);
+        margin: 0;
+        align-self: end;
+      }
+      #s1 p
+      {
+        padding: 0;
+        margin: 0;
+        font-size: 2rem;
+      }
+
+      #s3 video
+      {
+        margin-bottom: max(-300px, -40%);
+      }
+
+      /*@media (min-resolution: 300dpi)*/
+      @media (max-width: 768px)
+      {
+        html
+        {
+          font-size: 12px;
+        }
+        h1
+        {
+          padding: 0 0 0 15px;
+          border-left: 15px solid #f00;
+          font-size: 2.3rem;
+        }
+        span
+        {
+          border-left: 10px solid #f00;
+          padding: 0 0 0 5px;
+        }
+
+        #s1 p
+        {
+          font-size: 1.4rem;
+        }
+      }
+    </style>
+  </head>
+
+  <body>
+    <section id="s1">
+      <header>
+        <h3>Esteban Ramirez - 22/12/2023</h3>
+        <h1>Simulating Slots</h1>
+      </header>
+      <video src="video/slots.mp4" autoplay loop muted playsinline></video>
+      <div>
+        <p>
+          So, I came accross a nice 
+          <a href="https://frontendmasters.com/blog/light-dom-only/">Frontend Masters 
+          article, by Chris Coyier, titled "Light-DOM-Only Web Components are Sweet"</a>.
+          In it, Chris extols the virtues of what he refers to as "Light DOM" Web Components.
+          Light components are simply Web Components that do not use any shadow DOM.
+          Unfortunately, Chris also laments not being able to use HTML slots, because they are
+          an exclusive feature of shadow DOMs. For the uninitiated,
+          <a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot">
+          slots</a> allow one to indicate where, within a component, child elements will be 
+          rendered.
+          My take on all this, is that you do not have to forgo the functionality
+          of slots when using plain old "light" Web Components. And I'll show how, below.          
+        </p>
+      </div>
+    </section>
+
+    <section id="s2">
+      <div>
+        <p>
+          <span>T</span>he magic happens within the following utility function. Its code 
+          is intentionally naive and simple, for illustrative purposes. I expect you'll want
+          to implement your own, to fit your usage scenario.
+        </p>
+        <p>
+          This function allows one to utilise slot components in the same way that they
+          would be utilised within a shadow DOM component. All it essentially does is
+          to move any component child elements into slots defined through an HTML string.
+          The concept would be the same if one used something like 
+          <a href="https://lit.dev/docs/v1/lit-html/introduction/">Lit HTML templates</a>.
+        </p>
+      </div>
+      <pre>
+        <code>
+function childrenToSlots(component, html) 
+{
+  // create elements from given html
+  var template = document.createElement('template');
+  template.innerHTML = html;
+
+  // cycle through all defined slots
+  const slots = template.content.querySelectorAll("slot"); 
+  for (const slot of slots)
+  {
+    // extract all component child elements assigned to current slot
+    const slotChildren = component.querySelectorAll(`[slot='${slot.name}']`);
+
+    // move child elements into slot
+    slot.append(...slotChildren);
+  }
+
+  // replace all component chidren with new slotted elements
+  component.replaceChildren(template.content);
+}    
+        </code>
+      </pre>
+    </section>
+
+    <section id="s3">
+      <div>
+        <p>
+          <span>L</span>et's compare usage with a typical shadow DOM component. Below we
+          have the code and HTML for two Web Components. The first, is a "light" DOM component
+          using the aforementioned utility function childrenToSlots(). The second, is
+          a component using the shadow DOM and slots, as expected.
+        </p>
+        <p>
+          You'll notice very little difference. The HTML to define the components and the
+          HTML to use each component is identical. The only minor differences are due to
+          my using a constructor to create the shadow DOM and calling the utility function.
+        </p>
+      </div>
+      <pre>
+        <code>
+class LightComponent extends HTMLElement 
+{
+  connectedCallback()
+  {
+    const html = `
+      &lt;header&gt;&lt;slot name="hdr"&gt;&lt;/slot&gt;&lt;/header&gt;
+      &lt;main&gt;&lt;slot name="mn"&gt;&lt;/slot&gt;&lt;/main&gt;
+      &lt;footer&gt;&lt;slot name="ftr"&gt;&lt;/slot&gt;&lt;/footer&gt;
+    `;
+    childrenToSlots(this, html);
+  }
+}
+customElements.define("light-comp", LightComponent);
+        </code>
+        <code>
+class ShadowComponent extends HTMLElement 
+{
+  constructor()
+  {
+    super();
+    this.attachShadow({mode:"open"});
+  }
+
+  connectedCallback()
+  {
+    this.shadowRoot.innerHTML = `
+      &lt;header&gt;&lt;slot name="hdr"&gt;&lt;/slot&gt;&lt;/header&gt;
+      &lt;main&gt;&lt;slot name="mn"&gt;&lt;/slot&gt;&lt;/main&gt;
+      &lt;footer&gt;&lt;slot name="ftr"&gt;&lt;/slot&gt;&lt;/footer&gt;
+    `;
+  }
+}
+customElements.define("shadow-comp", ShadowComponent);    
+        </code>
+        <code>
+&lt;light-comp&gt;
+  &lt;div slot="mn"&gt;this goes into the main slot&lt;/div&gt;
+  &lt;span slot="ftr"&gt;this goes into the footer slot&lt;/span&gt;
+  &lt;div slot="mn"&gt;this goes into the main slot too&lt;/div&gt;
+  &lt;span slot="hdr"&gt;this goes into the header slot&lt;/span&gt;
+&lt;/light-comp&gt;      
+        </code>
+        <code>
+&lt;shadow-comp&gt;
+  &lt;div slot="mn"&gt;this goes into the main slot&lt;/div&gt;
+  &lt;span slot="ftr"&gt;this goes into the footer slot&lt;/span&gt;
+  &lt;div slot="mn"&gt;this goes into the main slot too&lt;/div&gt;
+  &lt;span slot="hdr"&gt;this goes into the header slot&lt;/span&gt;
+&lt;/shadow-comp&gt;      
+        </code>
+      </pre>
+    </section>
+
+    <section id="s6">
+      <p>
+        <span>S</span>o that's it. Now you have, at least, one way to use slots in plain
+        old "light" Web Components. Below are some links you might find helpful.
+      </p>
+      <ul>
+        <li><a href="https://frontendmasters.com/blog/light-dom-only/">Light-DOM-Only Web Components are Sweet</a> - Original Frontend Masters article by Chris Coyier</li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/HTML/Element/slot">Slot Element</a> - MDN Element definition</li>
+        <li><a href="https://lit.dev/docs/v1/lit-html/introduction/">Lit HTML</a> - Library used to make it easier to work with HTML strings</li>
+        <li><a href="https://developer.mozilla.org/en-US/docs/Web/API/Web_components">Web Components</a> - MDN Reference</li>
+      </ul>
+    </section>
+  </body>
+
+</html>
